@@ -43,12 +43,25 @@
 - MAVROS (ROS2)
 
 ### 1. Clone
+
 ```bash
-git clone <this-repo> /workspace/aerial_ws
-cd /workspace/aerial_ws
+# Clone with submodules (recommended):
+git clone --recurse-submodules https://github.com/dingdongdengdong/aerial_ws.git /workspace/aerial_ws
+
+# Or if already cloned:
+# cd /workspace/aerial_ws && git submodule update --init --recursive
 ```
 
-### 2. Build ROS2 Workspace
+### 2. Clone Upstream Dependency
+
+This project depends on the [Aerial Autonomy Stack](https://github.com/JacopoPan/aerial-autonomy-stack) for `ground_system_msgs` and other packages. It is tracked as a git submodule at `external/aerial-autonomy-stack`.
+
+```bash
+cd /workspace/aerial_ws
+git submodule update --init --recursive
+```
+
+### 3. Build ROS2 Workspace
 ```bash
 cd ros2_ws
 source /opt/ros/humble/setup.bash
@@ -56,7 +69,7 @@ colcon build
 source install/setup.bash
 ```
 
-### 3. Start PX4 SITL (Terminal 1)
+### 4. Start PX4 SITL (Terminal 1)
 ```bash
 cd /workspace/PX4-Autopilot
 make px4_sitl none

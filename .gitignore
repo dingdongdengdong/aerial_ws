@@ -1,0 +1,23 @@
+# ROS2 build artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ground system msgs symlink (tracked via submodule)
+ros2_ws/src/ground_system_msgs
+
+# Submodules
+external/
+
+# Models / large data
+models/
+
+# Dataset
+dataset/synthetic/
+dataset/real/
+dataset/mixed_train/
