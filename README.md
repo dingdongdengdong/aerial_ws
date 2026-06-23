@@ -5,6 +5,9 @@
 
 ## Architecture
 
+For the no-Docker/native runbook that adapts upstream AAS to this dev container,
+see [`docs/AAS_NATIVE_NO_DOCKER.md`](docs/AAS_NATIVE_NO_DOCKER.md).
+
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Isaac Sim + Pegasus (physics/rendering)              │

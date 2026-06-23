@@ -50,7 +50,7 @@ def generate_launch_description():
         default="udp://:4560@localhost:14550",  # ← CHANGE #1: Pegasus port
     )
     gcs_url = LaunchConfiguration(
-        "gcs_url", default="udp://:@localhost:14550"
+        "gcs_url", default="udp://@localhost:14550"
     )
     tgt_system = LaunchConfiguration("tgt_system", default="1")
     drone_id = LaunchConfiguration("drone_id", default="1")
@@ -151,7 +151,7 @@ def generate_launch_description():
     return LaunchDescription([
         # Declare args so they can be overridden from CLI
         DeclareLaunchArgument("fcu_url", default_value="udp://:4560@localhost:14550"),
-        DeclareLaunchArgument("gcs_url", default_value="udp://:@localhost:14550"),
+        DeclareLaunchArgument("gcs_url", default_value="udp://@localhost:14550"),
         DeclareLaunchArgument("tgt_system", default_value="1"),
         DeclareLaunchArgument("drone_id", default_value="1"),
         DeclareLaunchArgument("camera_topic", default_value="/drone/inspection_camera/color/image_raw"),
