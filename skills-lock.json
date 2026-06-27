@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "data-designer": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/data-designer/SKILL.md",
+      "computedHash": "c87e3b56a6960e7ac62004f36b760d82aef6f7621e4d218a72b2cb7031a876cb"
+    },
+    "physical-ai-defect-image-generation": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-defect-image-generation/SKILL.md",
+      "computedHash": "048b0fd2ccd7eabca8803fe8c31f866fdb234f99d9bb3d17e86ae5c25712e98f"
+    }
+  }
+}

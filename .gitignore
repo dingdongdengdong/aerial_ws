@@ -21,6 +21,7 @@ dataset/mixed_train/
 
 # Local agent/runtime state
 .omx/
+.agents/
 .env
 .env.*
 !.env.example

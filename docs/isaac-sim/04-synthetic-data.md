@@ -18,9 +18,69 @@ git switch -c feature/sdg-replicator-milestone
 
 Initial success target:
 - Generate a small synthetic inspection dataset from Isaac Sim/Omniverse Replicator.
-- Include RGB images and labels for defects such as crack, corrosion, and paint damage.
+- Include RGB images and labels for defects such as crack, corrosion, and spalling.
 - Keep outputs under ignored `dataset/synthetic/`.
 - Provide a command that runs inside `nvcr.io/nvidia/isaac-sim:6.0.0`.
+
+Issue #9 is the active SDG target. No crane CAD is required for the first milestone batch.
+Use Isaac/Omniverse metal or concrete inspection surfaces, then swap in crane
+USD later when it is available. The selected class order is `crack`,
+`corrosion`, `spalling`.
+
+NVIDIA skills installed for this repo:
+
+```bash
+npx skills add nvidia/skills --full-depth \
+  --skill data-designer \
+  --skill physical-ai-defect-image-generation \
+  -y
+```
+
+Use `physical-ai-defect-image-generation` as defect taxonomy and data handoff
+guidance, not as the runtime. That NVIDIA skill is oriented around OSMO/Cosmos
+AnomalyGen flows; this repository's runtime remains local Isaac Sim 6.0 with
+Omniverse Replicator.
+
+Milestone config:
+
+```bash
+/workspace/aerial_ws/configs/sdg/replicator_defects.json
+```
+
+Smoke run inside the Isaac Sim 6.0 container:
+
+```bash
+cd /workspace/aerial_ws
+export ROS_DOMAIN_ID=22
+
+/isaac-sim/python.sh /workspace/aerial_ws/scripts/isaac_sim_replicator_defects.py \
+  --config /workspace/aerial_ws/configs/sdg/replicator_defects.json \
+  --num-frames 50 \
+  --output-dir /workspace/aerial_ws/dataset/synthetic
+```
+
+Full Issue #9 target:
+
+```bash
+/isaac-sim/python.sh /workspace/aerial_ws/scripts/isaac_sim_replicator_defects.py \
+  --config /workspace/aerial_ws/configs/sdg/replicator_defects.json \
+  --num-frames 1000 \
+  --output-dir /workspace/aerial_ws/dataset/synthetic
+```
+
+Expected output contract:
+
+```text
+dataset/synthetic/
+├── images/
+├── masks/
+├── labels_yolo_seg/
+└── metadata.jsonl
+```
+
+`labels_yolo_seg` is the training handoff target. Replicator segmentation masks
+are the source of truth; YOLO-seg polygons should be regenerated from masks if
+writer formats change.
 
 ---
 

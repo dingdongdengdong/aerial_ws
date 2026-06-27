@@ -39,6 +39,12 @@ This repository is an isolated, distribution-oriented simulation workspace for A
   replace it with the upstream AAS simulation image.
 - Next active milestone after AAS unification is SDG: Isaac Sim/Omniverse
   Replicator synthetic-data generation for inspection defects.
+- SDG Issue #9 starts without crane CAD. Use built-in Isaac/Omniverse
+  metal/concrete inspection surfaces first, then swap a crane USD into the same
+  Replicator graph later.
+- SDG class order is `crack`, `corrosion`, `spalling`. Write RGB images,
+  segmentation masks, YOLO-seg labels, and metadata under ignored
+  `dataset/synthetic/`.
 - Default startup:
   - `cp .env.example .env`
   - `docker compose up foxglove`

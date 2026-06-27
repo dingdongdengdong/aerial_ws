@@ -201,6 +201,23 @@ keeping AAS aircraft/ground code unchanged. The first deliverable should be a
 small, reproducible Replicator pipeline for container/crane inspection imagery,
 labels, and validation commands.
 
+The Issue #9 SDG path uses `configs/sdg/replicator_defects.json` and
+`scripts/isaac_sim_replicator_defects.py`. Start with built-in metal/concrete
+inspection surfaces because crane CAD is not available yet, then swap a crane
+USD into the same Replicator graph later. The class order is `crack`,
+`corrosion`, `spalling`; outputs stay under ignored `dataset/synthetic/` with
+`images/`, `masks/`, `labels_yolo_seg/`, and `metadata.jsonl`.
+
+```bash
+cd /workspace/aerial_ws
+export ROS_DOMAIN_ID=22
+
+/isaac-sim/python.sh /workspace/aerial_ws/scripts/isaac_sim_replicator_defects.py \
+  --config /workspace/aerial_ws/configs/sdg/replicator_defects.json \
+  --num-frames 50 \
+  --output-dir /workspace/aerial_ws/dataset/synthetic
+```
+
 ## Safety
 
 **AI NEVER CONTROLS MOTORS DIRECTLY** — only detects and reports.

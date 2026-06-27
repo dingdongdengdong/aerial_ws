@@ -1,0 +1,74 @@
+{
+  "name": "issue-9-isaac-replicator-defects",
+  "description": "Isaac Sim 6.0 Replicator SDG milestone for inspection defects without requiring crane CAD for the first batch.",
+  "classes": [
+    "crack",
+    "corrosion",
+    "spalling"
+  ],
+  "runtime": {
+    "isaac_sim_image": "nvcr.io/nvidia/isaac-sim:6.0.0",
+    "container_repo": "/workspace/aerial_ws",
+    "isaac_python": "/isaac-sim/python.sh",
+    "ros_domain_id": "22",
+    "foxglove_port": "8865"
+  },
+  "generation": {
+    "target_frames": 1000,
+    "smoke_test_frames": 50,
+    "resolution": [
+      640,
+      640
+    ],
+    "defects_per_frame": [
+      1,
+      4
+    ],
+    "normal_map_dir": "assets/defects/normal_maps",
+    "allow_builtin_surfaces_when_crane_cad_missing": true
+  },
+  "domain_randomization": {
+    "lighting_modes": [
+      "clear_day",
+      "overcast",
+      "dusk",
+      "work_light"
+    ],
+    "surface_materials": [
+      "painted_steel",
+      "rusted_steel",
+      "bare_concrete"
+    ],
+    "camera_altitude_m": [
+      5.0,
+      15.0
+    ],
+    "camera_pitch_deg": [
+      -90.0,
+      -55.0
+    ],
+    "defect_rotation_deg": [
+      0.0,
+      360.0
+    ],
+    "defect_scale_m": [
+      0.05,
+      0.6
+    ]
+  },
+  "outputs": {
+    "root": "dataset/synthetic",
+    "images": "images",
+    "masks": "masks",
+    "labels_yolo_seg": "labels_yolo_seg",
+    "metadata": "metadata.jsonl"
+  },
+  "nvidia_skills": {
+    "installed_with": "npx skills add nvidia/skills --full-depth --skill data-designer --skill physical-ai-defect-image-generation -y",
+    "selected": [
+      "data-designer",
+      "physical-ai-defect-image-generation"
+    ],
+    "usage": "Use physical-ai-defect-image-generation as defect taxonomy and handoff guidance only; use local Isaac Sim Replicator as the runtime."
+  }
+}
