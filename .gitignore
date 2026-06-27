@@ -16,6 +16,7 @@ models/
 
 # Dataset
 dataset/synthetic/
+dataset/reference/
 dataset/real/
 dataset/mixed_train/
 
