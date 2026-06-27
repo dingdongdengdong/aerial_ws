@@ -8,9 +8,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Ground system msgs symlink (tracked via submodule)
-ros2_ws/src/ground_system_msgs
-
 # Submodules
 external/
 

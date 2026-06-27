@@ -5,28 +5,34 @@
 
 ## Architecture
 
+This workspace follows upstream
+[`aerial-autonomy-stack`](https://github.com/JacopoPan/aerial-autonomy-stack)
+architecture for the `aircraft` and `ground` roles. The upstream AAS simulation
+container is intentionally replaced by this repo's Isaac Sim 6.0/Pegasus stack.
+
 ```
 ┌──────────────────────────────────────────────────────┐
-│  Isaac Sim + Pegasus (physics/rendering)              │
+│  Simulation role: Isaac Sim 6.0 + Pegasus             │
 │  ├── Container Harbor + Cranes (USD scene)            │
 │  ├── Iris Quadrotor (multirotor dynamics)             │
 │  └── Inspection Camera (640×640, 20Hz, down-facing)   │
 ├──────────────────────────────────────────────────────┤
-│  PX4 SITL (flight controller)                         │
-│  ←→ MAVLink UDP (port 14540)                         │
+│  AAS ground role                                      │
+│  ├── drone_traffic_controller                         │
+│  ├── ground_system / ground_system_msgs               │
+│  └── Zenoh/QGC-style supervision interfaces           │
 ├──────────────────────────────────────────────────────┤
-│  MAVROS (MAVLink ↔ ROS2 bridge)                       │
-│  Topics: /mavros/state, /mavros/local_position/pose   │
+│  AAS aircraft role                                    │
+│  ├── autopilot_interface — Takeoff/Land/Orbit/Offboard│
+│  ├── offboard_control — PX4 Offboard / ArduPilot Guided│
+│  ├── mission — behavior-tree conops executor          │
+│  ├── drone_traffic_client / state_sharing             │
+│  └── yolo_py — AAS perception publisher               │
 ├──────────────────────────────────────────────────────┤
-│  Aerial Autonomy Stack (ROS2 nodes)                   │
-│  ├── autopilot_interface (C++)  — ROS2 actions        │
-│  │   Actions: Takeoff, Land, Orbit, Offboard           │
-│  │   Services: SetReposition, SetSpeed                │
-│  ├── mission (Python)           — YAML conops executor│
-│  ├── yolo_py (Python)           — ONNX GPU inference  │
-│  └── state_sharing (C++)        — Swarm state via Zenoh│
+│  Autopilot links                                      │
+│  └── PX4 / ArduPilot via XRCE-DDS or MAVROS           │
 ├──────────────────────────────────────────────────────┤
-│  pegasus_ai (our nodes)                               │
+│  Repo-specific inspection nodes                       │
 │  └── inference_node (TensorRT YOLO defect detection)  │
 ├──────────────────────────────────────────────────────┤
 │  Jetson Orin Nano Super (deployment)                  │
@@ -51,7 +57,11 @@ git submodule update --init --recursive
 cp .env.example .env
 ```
 
-Agent invariant: keep this repo isolated and use `ROS_DOMAIN_ID=22` for every terminal and container.
+Agent invariants:
+- Keep this repo isolated and use `ROS_DOMAIN_ID=22` for every terminal and container.
+- Keep `external/aerial-autonomy-stack` initialized; AAS aircraft and ground ROS
+  packages in `ros2_ws/src` are links into that submodule.
+- Do not use the upstream AAS simulation container here; use Isaac Sim 6.0.
 
 ### 2. Start the distribution simulation stack
 
@@ -97,16 +107,41 @@ source /opt/ros/humble/setup.bash
 source /workspace/aerial_ws/ros2_ws/install/setup.bash
 
 ros2 run mavros mavros_node --ros-args \
-  -p fcu_url:=udp://:14540@localhost:14550
+  -p fcu_url:=udp://:14540@localhost:18570 \
+  -p gcs_url:=udp://@localhost:14550
 
-ros2 run autopilot_interface px4_interface_node
-DRONE_ID=1 ros2 run mission mission --conops /workspace/aerial_ws/missions/crane_inspection.yaml
+ros2 launch pegasus_bringup drone_stack.launch.py \
+  drone_id:=1 \
+  mission_file:=/workspace/aerial_ws/missions/crane_inspection.yaml
 ```
 
 ### 6. Run tests
 ```bash
 cd /workspace/aerial_ws
 python3 -m pytest tests/ -v
+```
+
+Non-simulation AAS validation without host ROS:
+
+```bash
+docker run --rm -e ROS_DOMAIN_ID=22 \
+  -v "$PWD":/workspace/aerial_ws \
+  -w /workspace/aerial_ws/ros2_ws \
+  ros:humble-ros-base bash -lc '
+apt-get update >/dev/null
+apt-get install -y --no-install-recommends \
+  python3-colcon-common-extensions python3-pip libgeographic-dev \
+  nlohmann-json3-dev ros-humble-geographic-msgs ros-humble-mavlink \
+  ros-humble-mavros-msgs ros-humble-vision-msgs ros-humble-py-trees \
+  ros-humble-py-trees-ros >/dev/null
+ln -s /opt/ros/humble/include/mavlink/v2.0 /usr/local/include/mavlink
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install --packages-up-to \
+  autopilot_interface autopilot_interface_msgs drone_traffic_client \
+  imu_publisher mission offboard_control state_sharing yolo_py \
+  drone_traffic_controller ground_system ground_system_msgs \
+  pegasus_ai pegasus_bringup pegasus_msgs
+'
 ```
 
 ## TDD Milestones
@@ -130,14 +165,17 @@ aerial_ws/
 ├── AGENTS.md                      # repo memory/instructions for AI agents
 ├── docker-compose.yml             # Isaac Sim 6.0 + Foxglove 8865 simulation stack
 ├── .env.example                   # distribution defaults (ROS_DOMAIN_ID=22)
+├── external/aerial-autonomy-stack/ # upstream AAS source of truth
 ├── ros2_ws/src/
-│   ├── autopilot_interface/      # ROS2 action servers (Takeoff, Land, Orbit)
-│   ├── autopilot_interface_msgs/ # Action/Srv/Msg definitions
-│   ├── offboard_control/         # PX4/ArduPilot offboard setpoint streaming
-│   ├── mission/                  # YAML conops mission executor
-│   ├── yolo_py/                  # YOLO ONNX GPU inference
-│   ├── state_sharing/            # Inter-drone state (Zenoh)
-│   └── imu_publisher/            # IMU data forwarding
+│   ├── autopilot_interface -> external AAS aircraft package
+│   ├── offboard_control -> external AAS aircraft package
+│   ├── mission -> external AAS aircraft package
+│   ├── drone_traffic_client -> external AAS aircraft package
+│   ├── ground_system -> external AAS ground package
+│   ├── ground_system_msgs -> external AAS ground package
+│   ├── pegasus_ai/               # repo-owned Isaac/Pegasus inspection nodes
+│   ├── pegasus_bringup/          # repo-owned launch glue
+│   └── pegasus_msgs/             # repo-owned inspection messages
 ├── scripts/                      # Isaac Sim integration scripts
 ├── tests/                        # Contract tests (TDD milestones)
 ├── missions/                     # Conops YAML files

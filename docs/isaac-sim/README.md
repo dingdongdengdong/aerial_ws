@@ -22,6 +22,9 @@
 ## Quick-Start Commands for Agents
 
 Use the repo-level Compose stack first. It fixes the distribution defaults: Isaac Sim 6.0, ROS domain `22`, and Foxglove port `8865`.
+This repo follows upstream Aerial Autonomy Stack for aircraft and ground
+architecture, but replaces the upstream simulation container with Isaac Sim
+6.0/Pegasus.
 
 ```bash
 cd /workspace/aerial_ws
@@ -96,7 +99,7 @@ Read in order for the best learning experience:
 ## Project Architecture
 
 ```
-Isaac Sim (rendering + physics)
+Simulation role: Isaac Sim 6.0 (rendering + physics)
   │
   ├── Pegasus Simulator (drone dynamics + sensors)
   │     ├── PX4MavlinkBackend ←→ PX4 SITL (flight control)
@@ -111,10 +114,21 @@ Isaac Sim (rendering + physics)
   ├── MAVROS ←→ MAVLink
   │     └── PX4 OFFBOARD control, telemetry
   │
-  └── Aerial Autonomy Stack
-        ├── autopilot_interface (C++) — action server
-        ├── mission (Python) — conops executor
-        └── inference_node (TensorRT YOLO)
+  ├── AAS aircraft role
+  │     ├── autopilot_interface — action server
+  │     ├── offboard_control — PX4/ArduPilot references
+  │     ├── mission — behavior-tree conops executor
+  │     ├── drone_traffic_client
+  │     ├── state_sharing
+  │     └── yolo_py
+  │
+  ├── AAS ground role
+  │     ├── drone_traffic_controller
+  │     ├── ground_system
+  │     └── ground_system_msgs
+  │
+  └── repo-owned inspection layer
+        └── pegasus_ai inference_node (TensorRT YOLO)
 ```
 
 ---
