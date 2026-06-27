@@ -41,6 +41,16 @@ guidance, not as the runtime. That NVIDIA skill is oriented around OSMO/Cosmos
 AnomalyGen flows; this repository's runtime remains local Isaac Sim 6.0 with
 Omniverse Replicator.
 
+Reference data and credentials:
+
+- User-provided defect demo pack:
+  `https://d4i3qtqj3r0z5.cloudfront.net/DefectDet_DemoPack_NVDA%401.0.1.zip`
+  (HTTP `Content-Length` observed as `341975385` bytes on 2026-06-28).
+- Official Omniverse USD downloadable packs:
+  `https://docs.omniverse.nvidia.com/usd/latest/usd_content_samples/downloadable_packs.html`.
+- Store NVIDIA API credentials in ignored `.env` files as `NVIDIA_API_KEY`.
+  Do not put raw NVIDIA API key values in tracked docs, code, tests, or commits.
+
 Milestone config:
 
 ```bash
@@ -81,6 +91,17 @@ dataset/synthetic/
 `labels_yolo_seg` is the training handoff target. Replicator segmentation masks
 are the source of truth; YOLO-seg polygons should be regenerated from masks if
 writer formats change.
+
+The current scaffold uses Replicator `BasicWriter` outputs as raw artifacts,
+then post-processes them into the stable handoff layout:
+
+- `rgb_*.png` -> `images/frame_*.png`
+- `semantic_segmentation_*.png` -> `masks/frame_*.png`
+- `semantic_segmentation_labels_*.json` + mask pixels -> `labels_yolo_seg/frame_*.txt`
+
+If a frame has no recognized defect-class pixels, the label file is intentionally
+empty. This keeps image/label cardinality stable while making semantic tagging
+issues visible during validation.
 
 ---
 

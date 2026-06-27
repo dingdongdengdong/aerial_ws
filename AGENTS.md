@@ -45,6 +45,14 @@ This repository is an isolated, distribution-oriented simulation workspace for A
 - SDG class order is `crack`, `corrosion`, `spalling`. Write RGB images,
   segmentation masks, YOLO-seg labels, and metadata under ignored
   `dataset/synthetic/`.
+- Reference defect dataset provided by the user on 2026-06-28:
+  `https://d4i3qtqj3r0z5.cloudfront.net/DefectDet_DemoPack_NVDA%401.0.1.zip`.
+  Keep downloaded copies under ignored dataset/model paths.
+- Official Omniverse USD downloadable packs reference:
+  `https://docs.omniverse.nvidia.com/usd/latest/usd_content_samples/downloadable_packs.html`.
+- NVIDIA API credentials are local secrets only. Use `NVIDIA_API_KEY` in ignored
+  `.env` files; never write raw NVIDIA API key values into tracked docs, code,
+  or commits.
 - Default startup:
   - `cp .env.example .env`
   - `docker compose up foxglove`

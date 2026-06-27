@@ -1,6 +1,7 @@
 import ast
 import importlib.util
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -92,6 +93,101 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
 
         self.assertGreater(checked, 0, "expected to validate at least one tuple uniform call")
 
+    def test_replicator_scene_sets_visibility_primitives(self):
+        source = SCRIPT.read_text()
+
+        self.assertIn("rep.create.light", source)
+        self.assertIn("look_at=", source)
+        self.assertIn("(0.0, 0.0, 1.2)", source)
+
+    def test_replicator_postprocess_runs_before_simulation_app_close(self):
+        source = SCRIPT.read_text()
+        run_start = source.index("def run_replicator")
+        run_end = source.index("def build_arg_parser")
+        run_replicator_source = source[run_start:run_end]
+
+        self.assertLess(
+            run_replicator_source.index("postprocess_replicator_outputs"),
+            run_replicator_source.index("simulation_app.close()"),
+        )
+
+    def test_replicator_cleanup_removes_generated_frames_but_keeps_metadata_jsonl(self):
+        spec = importlib.util.spec_from_file_location("replicator_defects", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp)
+            for relative_path in [
+                "rgb_0001.png",
+                "semantic_segmentation_0001.png",
+                "semantic_segmentation_labels_0001.json",
+                "instance_segmentation_0001.png",
+                "images/frame_000001.png",
+                "masks/frame_000001.png",
+                "labels_yolo_seg/frame_000001.txt",
+                "metadata.txt",
+            ]:
+                path = output_dir / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("generated", encoding="utf-8")
+            metadata = output_dir / "metadata.jsonl"
+            metadata.write_text('{"event": "prepared"}\n', encoding="utf-8")
+
+            module.clear_generated_frame_outputs(output_dir)
+
+            self.assertEqual('{"event": "prepared"}\n', metadata.read_text())
+            self.assertEqual([metadata], sorted(path for path in output_dir.rglob("*") if path.is_file()))
+
+    def test_replicator_postprocess_builds_training_handoff_from_basic_writer_outputs(self):
+        spec = importlib.util.spec_from_file_location("replicator_defects", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        config = module.load_config(CONFIG)
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "dataset" / "synthetic"
+            output_dir.mkdir(parents=True)
+
+            Image.new("RGB", (4, 4), (20, 30, 40)).save(output_dir / "rgb_0000.png")
+            mask = Image.new("RGBA", (4, 4), (0, 0, 0, 0))
+            for x in range(1, 3):
+                for y in range(1, 3):
+                    mask.putpixel((x, y), (255, 0, 0, 255))
+            mask.save(output_dir / "semantic_segmentation_0000.png")
+            (output_dir / "semantic_segmentation_labels_0000.json").write_text(
+                json.dumps({"(255, 0, 0, 255)": {"class": "crack"}}),
+                encoding="utf-8",
+            )
+
+            records = module.postprocess_replicator_outputs(config, output_dir, root)
+
+            image_path = output_dir / "images" / "frame_000000.png"
+            mask_path = output_dir / "masks" / "frame_000000.png"
+            label_path = output_dir / "labels_yolo_seg" / "frame_000000.txt"
+            self.assertTrue(image_path.exists())
+            self.assertTrue(mask_path.exists())
+            self.assertEqual(
+                "0 0.250000 0.250000 0.500000 0.250000 "
+                "0.500000 0.500000 0.250000 0.500000",
+                label_path.read_text().strip(),
+            )
+            self.assertEqual(
+                [
+                    {
+                        "frame": 0,
+                        "image": "images/frame_000000.png",
+                        "mask": "masks/frame_000000.png",
+                        "label": "labels_yolo_seg/frame_000000.txt",
+                        "classes": ["crack"],
+                    }
+                ],
+                records,
+            )
+
     def test_docs_explain_no_crane_asset_replicator_run_and_nvidia_skill_choice(self):
         doc = DOC.read_text()
 
@@ -101,6 +197,19 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
         self.assertIn("No crane CAD is required for the first milestone batch", doc)
         self.assertIn("/isaac-sim/python.sh /workspace/aerial_ws/scripts/isaac_sim_replicator_defects.py", doc)
         self.assertIn("labels_yolo_seg", doc)
+        self.assertIn("DefectDet_DemoPack_NVDA%401.0.1.zip", doc)
+        self.assertIn("downloadable_packs.html", doc)
+        self.assertIn("NVIDIA_API_KEY", doc)
+
+    def test_tracked_reference_docs_do_not_contain_raw_nvidia_api_keys(self):
+        tracked_reference_files = [
+            REPO / "AGENTS.md",
+            REPO / ".env.example",
+            DOC,
+        ]
+
+        for path in tracked_reference_files:
+            self.assertNotIn("nv" + "api-", path.read_text(), f"{path} must not store raw API keys")
 
 
 if __name__ == "__main__":

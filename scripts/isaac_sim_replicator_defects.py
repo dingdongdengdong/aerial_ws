@@ -19,6 +19,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
@@ -110,6 +112,132 @@ def write_metadata_record(metadata_path: Path, record: Mapping[str, Any]) -> Non
         stream.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+def clear_generated_frame_outputs(output_dir: Path) -> None:
+    """Remove generated frame artifacts so new runs cannot mix with stale frames."""
+    patterns = [
+        "rgb_*.png",
+        "semantic_segmentation_*.png",
+        "semantic_segmentation_labels_*.json",
+        "instance_segmentation_*.png",
+        "instance_segmentation_mapping_*.json",
+        "instance_segmentation_semantics_mapping_*.json",
+        "images/frame_*.png",
+        "masks/frame_*.png",
+        "labels_yolo_seg/frame_*.txt",
+        "metadata.txt",
+    ]
+    for pattern in patterns:
+        for path in output_dir.glob(pattern):
+            if path.is_file():
+                path.unlink()
+
+
+def _rgba_key_to_tuple(value: str) -> Tuple[int, int, int, int]:
+    numbers = [int(part) for part in re.findall(r"-?\d+", value)]
+    if len(numbers) != 4:
+        raise ValueError(f"Expected RGBA key with four channels, got: {value}")
+    return (numbers[0], numbers[1], numbers[2], numbers[3])
+
+
+def _mask_pixels_for_color(mask_path: Path, rgba: Tuple[int, int, int, int]) -> List[Tuple[int, int]]:
+    from PIL import Image
+
+    pixels: List[Tuple[int, int]] = []
+    with Image.open(mask_path) as source:
+        image = source.convert("RGBA")
+        width, height = image.size
+        for y in range(height):
+            for x in range(width):
+                if image.getpixel((x, y)) == rgba:
+                    pixels.append((x, y))
+    return pixels
+
+
+def _frame_id(path: Path, prefix: str) -> int:
+    return int(path.stem.removeprefix(prefix))
+
+
+def postprocess_replicator_outputs(
+    config: Mapping[str, Any],
+    output_dir: Path,
+    repo_root: Path = REPO_ROOT,
+) -> List[Dict[str, Any]]:
+    """Convert BasicWriter files into the stable training handoff layout."""
+    paths = ensure_output_layout(config, repo_root)
+    classes = class_mapping(config["classes"])
+    records: List[Dict[str, Any]] = []
+
+    for rgb_path in sorted(output_dir.glob("rgb_*.png")):
+        frame = _frame_id(rgb_path, "rgb_")
+        frame_name = f"frame_{frame:06d}"
+        semantic_path = output_dir / f"semantic_segmentation_{frame:04d}.png"
+        semantic_labels_path = output_dir / f"semantic_segmentation_labels_{frame:04d}.json"
+
+        image_rel = Path(config["outputs"]["images"]) / f"{frame_name}.png"
+        mask_rel = Path(config["outputs"]["masks"]) / f"{frame_name}.png"
+        label_rel = Path(config["outputs"]["labels_yolo_seg"]) / f"{frame_name}.txt"
+        image_path = output_dir / image_rel
+        mask_path = output_dir / mask_rel
+        label_path = output_dir / label_rel
+
+        shutil.copy2(rgb_path, image_path)
+        if semantic_path.exists():
+            shutil.copy2(semantic_path, mask_path)
+
+        label_lines: List[str] = []
+        frame_classes: List[str] = []
+        if semantic_path.exists() and semantic_labels_path.exists():
+            labels = json.loads(semantic_labels_path.read_text(encoding="utf-8"))
+            from PIL import Image
+
+            with Image.open(semantic_path) as image:
+                width, height = image.size
+            for rgba_key, semantic in labels.items():
+                class_name = semantic.get("class") if isinstance(semantic, dict) else None
+                if class_name not in classes:
+                    continue
+                polygon = bbox_polygon_from_mask_pixels(
+                    _mask_pixels_for_color(semantic_path, _rgba_key_to_tuple(rgba_key)),
+                    width,
+                    height,
+                )
+                if not polygon:
+                    continue
+                label_lines.append(
+                    " ".join(
+                        [str(classes[class_name])]
+                        + [f"{coordinate:.6f}" for coordinate in polygon]
+                    )
+                )
+                frame_classes.append(class_name)
+
+        label_path.write_text(
+            "\n".join(label_lines) + ("\n" if label_lines else ""),
+            encoding="utf-8",
+        )
+        records.append(
+            {
+                "frame": frame,
+                "image": image_rel.as_posix(),
+                "mask": mask_rel.as_posix(),
+                "label": label_rel.as_posix(),
+                "classes": frame_classes,
+            }
+        )
+
+    if records:
+        write_metadata_record(
+            paths["metadata"],
+            {
+                "event": "postprocessed",
+                "frames": len(records),
+                "records": records,
+            },
+        )
+
+    return records
+
+
 def _start_simulation_app(headless: bool) -> Any:
     from isaacsim import SimulationApp
 
@@ -146,11 +274,11 @@ def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple
     """Build a no-crane-required inspection scene with semantic defect proxies."""
     width, height = config["generation"]["resolution"]
     materials = config["domain_randomization"]["surface_materials"]
-    altitude_min, altitude_max = config["domain_randomization"]["camera_altitude_m"]
-    pitch_min, pitch_max = config["domain_randomization"]["camera_pitch_deg"]
     scale_min, scale_max = config["domain_randomization"]["defect_scale_m"]
 
     with rep.new_layer():
+        rep.create.light(rotation=(315, 0, 0), intensity=3000, light_type="distant")
+
         surface_nodes = []
         for idx, material_name in enumerate(materials):
             x = (idx - 1) * 2.8
@@ -171,8 +299,8 @@ def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple
                 rep.modify.material(_defect_material(rep, class_name))
 
         camera = rep.create.camera(
-            position=rep.distribution.uniform((-3.0, -5.5, altitude_min), (3.0, -4.0, altitude_max)),
-            rotation=rep.distribution.uniform((pitch_min, 0, -20), (pitch_max, 0, 20)),
+            position=(0.0, -6.0, 2.2),
+            look_at=(0.0, 0.0, 1.2),
             focal_length=24,
         )
         render_product = rep.create.render_product(camera, (width, height))
@@ -206,7 +334,13 @@ def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple
     return camera, render_product
 
 
-def run_replicator(config: Mapping[str, Any], num_frames: int, output_dir: Path, headless: bool) -> None:
+def run_replicator(
+    config: Mapping[str, Any],
+    num_frames: int,
+    output_dir: Path,
+    headless: bool,
+    repo_root: Path = REPO_ROOT,
+) -> List[Dict[str, Any]]:
     """Run Isaac Sim Replicator. Requires /isaac-sim/python.sh."""
     os.environ.setdefault("ROS_DOMAIN_ID", str(config["runtime"]["ros_domain_id"]))
 
@@ -215,6 +349,7 @@ def run_replicator(config: Mapping[str, Any], num_frames: int, output_dir: Path,
         import omni.replicator.core as rep
 
         output_dir.mkdir(parents=True, exist_ok=True)
+        clear_generated_frame_outputs(output_dir)
         _build_scene(rep, config, output_dir)
 
         for frame in range(num_frames):
@@ -223,6 +358,9 @@ def run_replicator(config: Mapping[str, Any], num_frames: int, output_dir: Path,
                 print(f"Replicator generated {frame}/{num_frames} frames")
 
         rep.orchestrator.wait_until_complete()
+        records = postprocess_replicator_outputs(config, output_dir, repo_root)
+        print(f"Postprocessed {len(records)} Replicator frames into {output_dir}")
+        return records
     finally:
         simulation_app.close()
 
@@ -264,7 +402,7 @@ def main() -> int:
         print(f"Prepared Replicator output layout at {output_dir}")
         return 0
 
-    run_replicator(config, num_frames, output_dir, args.headless)
+    run_replicator(config, num_frames, output_dir, args.headless, args.repo_root)
     return 0
 
 
