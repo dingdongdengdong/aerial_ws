@@ -162,7 +162,7 @@ def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple
 
         for idx, class_name in enumerate(config["classes"]):
             defect = rep.create.cube(
-                position=rep.distribution.uniform((-2.6, -0.08, 0.4), (2.6, -0.12, 1.9)),
+                position=rep.distribution.uniform((-2.6, -0.12, 0.4), (2.6, -0.08, 1.9)),
                 rotation=rep.distribution.uniform((0, 0, 0), (0, 0, 360)),
                 scale=rep.distribution.uniform((scale_min, 0.012, 0.015), (scale_max, 0.02, 0.08)),
             )

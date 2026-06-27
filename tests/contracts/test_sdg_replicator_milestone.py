@@ -1,3 +1,4 @@
+import ast
 import importlib.util
 import json
 import unittest
@@ -58,6 +59,38 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
             },
             module.output_paths(config, REPO),
         )
+
+    def test_replicator_uniform_distribution_bounds_are_ordered(self):
+        source = SCRIPT.read_text()
+        tree = ast.parse(source)
+
+        checked = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Attribute) or node.func.attr != "uniform":
+                continue
+            if len(node.args) < 2:
+                continue
+            try:
+                lower = ast.literal_eval(node.args[0])
+                upper = ast.literal_eval(node.args[1])
+            except ValueError:
+                continue
+            if not isinstance(lower, tuple) or not isinstance(upper, tuple):
+                continue
+
+            checked += 1
+            self.assertEqual(len(lower), len(upper))
+            for axis, (lower_value, upper_value) in enumerate(zip(lower, upper)):
+                self.assertLessEqual(
+                    lower_value,
+                    upper_value,
+                    f"uniform lower bound must be <= upper bound on axis {axis}: "
+                    f"{lower} -> {upper}",
+                )
+
+        self.assertGreater(checked, 0, "expected to validate at least one tuple uniform call")
 
     def test_docs_explain_no_crane_asset_replicator_run_and_nvidia_skill_choice(self):
         doc = DOC.read_text()
