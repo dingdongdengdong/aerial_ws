@@ -164,8 +164,8 @@ Cosmos from its repository, for example:
 ```bash
 cd /tmp/cosmos-transfer2.5
 python examples/inference.py \
-  -i /workspaces/pegasus_ws/dataset/augmented/cosmos_inputs/crane_transfer_spec.json \
-  -o /workspaces/pegasus_ws/dataset/augmented/cosmos_outputs
+  -i /workspace/aerial_ws/dataset/augmented/cosmos_inputs/crane_transfer_spec.json \
+  -o /workspace/aerial_ws/dataset/augmented/cosmos_outputs
 ```
 
 The generated stub does not run GPU inference by default. Pass `--run-cosmos`

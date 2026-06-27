@@ -4,6 +4,26 @@
 
 ---
 
+## Milestone Direction
+
+This is the next project milestone after AAS unification. Keep AAS aircraft and
+ground packages unchanged; SDG work belongs in this wrapper repo because it is
+the Isaac Sim 6.0 replacement for the upstream AAS simulation role.
+
+Use a new branch:
+
+```bash
+git switch -c feature/sdg-replicator-milestone
+```
+
+Initial success target:
+- Generate a small synthetic inspection dataset from Isaac Sim/Omniverse Replicator.
+- Include RGB images and labels for defects such as crack, corrosion, and paint damage.
+- Keep outputs under ignored `dataset/synthetic/`.
+- Provide a command that runs inside `nvcr.io/nvidia/isaac-sim:6.0.0`.
+
+---
+
 ## 1. Isaac Sim Replicator Overview
 
 Replicator is Isaac Sim's built-in framework for generating synthetic datasets. It provides:
@@ -13,7 +33,7 @@ Replicator is Isaac Sim's built-in framework for generating synthetic datasets. 
 - **Writers**: Output data in standard formats (YOLO, COCO, KITTI)
 - **Graph-based API**: Compose randomizers and annotators into pipelines
 
-Official docs: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/replicator_tutorials/index.html
+Official docs: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/replicator_tutorials/index.html
 
 ### Replicator Pipeline Pattern
 
@@ -27,7 +47,7 @@ Scene Setup → Register Randomizers → Attach Annotators → Create Writer →
 #!/usr/bin/env python3
 """
 Minimal Replicator script for synthetic data generation.
-Run with: /workspace/isaacsim/isaac-sim.sh --allow-root -p this_script.py
+Run with: /isaac-sim/isaac-sim.sh --allow-root -p this_script.py
 """
 
 from isaacsim import SimulationApp
@@ -343,7 +363,7 @@ for img_path in synthetic_images:
 export DISPLAY=:99
 Xvfb :99 -screen 0 1024x768x24 &
 
-/workspace/isaacsim/isaac-sim.sh --allow-root -p \
+/isaac-sim/isaac-sim.sh --allow-root -p \
   /workspace/aerial_ws/scripts/generate_synthetic.py
 ```
 
@@ -353,10 +373,10 @@ Xvfb :99 -screen 0 1024x768x24 &
 export DISPLAY=:1
 
 # Launch Isaac Sim first
-/workspace/isaacsim/isaac-sim.sh --allow-root
+/isaac-sim/isaac-sim.sh --allow-root
 
 # Then run via --exec (for visual debugging)
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/generate_synthetic_exec.py
 ```
 
@@ -404,6 +424,6 @@ export DISPLAY=:1
 
 ## References
 
-- Replicator Tutorials: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/replicator_tutorials/index.html
+- Replicator Tutorials: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/replicator_tutorials/index.html
 - Replicator API Reference: https://docs.omniverse.nvidia.com/kit/docs/replicator/latest/
 - Cosmos Transfer 2.5: https://github.com/nvidia-cosmos/cosmos-transfer2.5

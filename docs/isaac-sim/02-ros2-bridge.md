@@ -6,10 +6,10 @@
 
 ## 1. How the Bridge Works
 
-Isaac Sim 5.1 ships with a **built-in ROS2 Humble distribution** located at:
+Isaac Sim 6.0 ships with a **built-in ROS2 Humble distribution** located at:
 
 ```
-/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib/
+/isaac-sim/exts/isaacsim.ros2.core/humble/lib/
 ```
 
 This is a **self-contained copy** of ROS2 Humble libraries. It is NOT the same as your system ROS2 at `/opt/ros/humble/`. The bridge extension (`isaacsim.ros2.bridge`) uses these internal libraries to create ROS2 publishers, subscribers, and services directly from within the Isaac Sim process.
@@ -27,7 +27,7 @@ This is a **self-contained copy** of ROS2 Humble libraries. It is NOT the same a
 │  │  └──────┬───────┘  └────────────────────────┘  │    │
 │  └─────────┼──────────────────────────────────────┘    │
 │            │ DDS (FastRTPS)                              │
-│            │ Domain ID: 44                               │
+│            │ Domain ID: 22                               │
 └────────────┼───────────────────────────────────────────┘
              │
       ┌──────┴──────┐
@@ -46,16 +46,16 @@ This is a **self-contained copy** of ROS2 Humble libraries. It is NOT the same a
 **These MUST be set before launching Isaac Sim** in every terminal that will interact with ROS2:
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib:$LD_LIBRARY_PATH
 ```
 
 ### Why Each Matters
 
 | Variable | Value | Explanation |
 |---|---|---|
-| `ROS_DOMAIN_ID` | `44` | All DDS participants must use the same domain ID. We use 44 to isolate from default domain 0 and any other projects. Mismatched domain IDs = silent failure (topics invisible). |
+| `ROS_DOMAIN_ID` | `22` | All DDS participants must use the same domain ID. We use 22 to isolate from default domain 0 and any other projects. Mismatched domain IDs = silent failure (topics invisible). |
 | `RMW_IMPLEMENTATION` | `rmw_fastrtps_cpp` | The RMW (ROS Middleware) layer. Isaac Sim's internal libs are compiled for FastRTPS. CycloneDDS may work but is untested. |
 | `LD_LIBRARY_PATH` | `...humble/lib` | **Critical**: Isaac Sim's internal ROS2 libraries MUST be found before system ones. Without this, you'll get ABI mismatches and segfaults. |
 
@@ -66,7 +66,7 @@ export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:
 ### Method A: Launch Flag (Recommended)
 
 ```bash
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge \
   --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
   --enable pegasus.simulator
@@ -98,7 +98,7 @@ enable_extension("isaacsim.ros2.bridge")
 
 After enabling, run in any terminal:
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 ros2 topic list
 # Should show topics if Pegasus is publishing
 ```
@@ -164,22 +164,22 @@ self.subscription = self.create_subscription(
 
 ```bash
 # Terminal 1: Set env and start Isaac Sim with ROS2 bridge
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib:$LD_LIBRARY_PATH
 export DISPLAY=:1
 
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge \
   --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
   --enable pegasus.simulator
 
 # Terminal 2: After Isaac Sim is up, spawn drone
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py
 
 # Terminal 3: Check topics (must set same env vars!)
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 source /opt/ros/humble/setup.bash
 
@@ -202,12 +202,12 @@ Foxglove provides a web-based visualization tool. We use `foxglove_bridge` to ex
 sudo apt install ros-humble-foxglove-bridge
 
 # Launch
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
-ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8865
 ```
 
-Then open a browser to `http://localhost:8765` (or use Foxglove desktop app) and connect to `ws://localhost:8765`.
+Then open a browser to `http://localhost:8865` (or use Foxglove desktop app) and connect to `ws://localhost:8865`.
 
 ### Expected Topics in Foxglove
 
@@ -225,13 +225,13 @@ Then open a browser to `http://localhost:8765` (or use Foxglove desktop app) and
 
 | Mistake | Symptom | Fix |
 |---|---|---|
-| `ROS_DOMAIN_ID` not set or mismatched | `ros2 topic list` shows different topics | Set `ROS_DOMAIN_ID=44` in all terminals |
+| `ROS_DOMAIN_ID` not set or mismatched | `ros2 topic list` shows different topics | Set `ROS_DOMAIN_ID=22` in all terminals |
 | Missing `LD_LIBRARY_PATH` | Segfault or "symbol not found" at launch | Add the `humble/lib` path |
 | `RMW_IMPLEMENTATION` mismatch | Nodes can't communicate even on same domain | Use `rmw_fastrtps_cpp` everywhere |
 | BEST_EFFORT subscriber with RELIABLE publisher | No data received | Set RELIABLE QoS explicitly |
 | Forgot to source ROS2 | `ros2: command not found` | `source /opt/ros/humble/setup.bash` |
 | Bridge not enabled | No topics appear | Use `--/isaac/startup/ros_bridge_extension=...` flag or enable in script |
-| Multiple ROS2 installations conflict | DDS discovery loops | Use unique `ROS_DOMAIN_ID=44` |
+| Multiple ROS2 installations conflict | DDS discovery loops | Use unique `ROS_DOMAIN_ID=22` |
 
 ## 8. Topic Namespace Reference
 
@@ -270,6 +270,6 @@ ROS2Backend(
 
 ## References
 
-- ROS2 Bridge Docs: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/ros2_bridge.html
+- ROS2 Bridge Docs: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/ros2_bridge.html
 - FastRTPS QoS Profiles: https://fast-dds.docs.eprosima.com/en/latest/
 - Foxglove Bridge: https://github.com/foxglove/ros-foxglove-bridge

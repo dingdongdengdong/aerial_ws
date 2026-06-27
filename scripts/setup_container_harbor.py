@@ -8,10 +8,10 @@ and spawns the Iris drone for crane inspection testing.
 Assets from: assets/container_harbor/ (SimReady Containers & Shipping 01 + 02)
 
 Run via --exec:
-    /workspace/isaacsim/isaac-sim.sh --allow-root \
+    /isaac-sim/isaac-sim.sh --allow-root \
       --ext-path .../pegasus.simulator --enable pegasus.simulator \
       --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge \
-      --exec /workspaces/pegasus_ws/scripts/setup_container_harbor.py
+      --exec /workspace/aerial_ws/scripts/setup_container_harbor.py
 """
 
 import asyncio
@@ -37,7 +37,11 @@ from scipy.spatial.transform import Rotation
 random.seed(42)
 
 # ── Container Harbor Asset Paths ───────────────────────────────────────────
-ASSETS_ROOT = "/workspaces/pegasus_ws/assets/container_harbor"
+AERIAL_WS = os.environ.get("AERIAL_WS", "/workspace/aerial_ws")
+ASSETS_ROOT = os.environ.get(
+    "CONTAINER_HARBOR_ASSETS_ROOT",
+    os.path.join(AERIAL_WS, "assets/container_harbor"),
+)
 PROPS_ROOT = os.path.join(ASSETS_ROOT, "Assets/simready_content/common_assets/props")
 
 # Key SimReady props for the scene
@@ -115,7 +119,7 @@ async def spawn_drone():
     stage = omni.usd.get_context().get_stage()
     from pxr import UsdGeom, Gf
     cranes_loaded = 0
-    crane_assets_dir = "/workspaces/pegasus_ws/assets/cranes"
+    crane_assets_dir = os.environ.get("CRANE_ASSETS_DIR", os.path.join(AERIAL_WS, "assets/cranes"))
     cranes = [
         # (filename, prim_path, position, description, root_prim)
         # root_prim MUST be explicit: neither USD file sets defaultPrim metadata,
@@ -227,10 +231,11 @@ async def spawn_drone():
     ]
 
     # ── 6. Spawn Iris quadrotor ─────────────────────────────────────────
-    USD_FILE = (
-        "/workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator"
-        "/pegasus/simulator/assets/Robots/Iris/iris.usd"
+    pegasus_ext_path = os.environ.get(
+        "PEGASUS_EXT_PATH",
+        "/workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator",
     )
+    USD_FILE = os.path.join(pegasus_ext_path, "pegasus/simulator/assets/Robots/Iris/iris.usd")
     init_pos = [5.0, -2.0, 8.0]
     init_quat = Rotation.from_euler("XYZ", [0, 0, 0], degrees=True).as_quat()
 
@@ -255,14 +260,16 @@ async def spawn_drone():
     carb.log_info("  Vehicle         : Iris quadrotor @ [5, -2, 8] m")
     carb.log_info("  Camera          : inspection_camera 640x640 20Hz (downward)")
     carb.log_info("")
-    carb.log_info("  ROS2 topics (domain 42):")
+    ros_domain_id = os.environ.get("ROS_DOMAIN_ID", "22")
+    foxglove_port = os.environ.get("FOXGLOVE_PORT", "8865")
+    carb.log_info(f"  ROS2 topics (domain {ros_domain_id}):")
     carb.log_info("    /pegasus/state/pose")
     carb.log_info("    /pegasus/state/twist")
     carb.log_info("    /pegasus/sensors/imu")
     carb.log_info("    /pegasus/inspection_camera/color/image_raw")
     carb.log_info("    /pegasus/inspection_camera/depth")
     carb.log_info("    /pegasus/inspection_camera/color/camera_info")
-    carb.log_info("  Foxglove : ws://localhost:8765")
+    carb.log_info(f"  Foxglove : ws://localhost:{foxglove_port}")
     carb.log_info("  VNC      : localhost:5900")
     carb.log_info("=" * 60)
 

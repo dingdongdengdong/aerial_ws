@@ -1,4 +1,4 @@
-# 01 — Getting Started with Isaac Sim 5.1
+# 01 — Getting Started with Isaac Sim 6.0
 
 > **Goal**: Verify your installation, launch Isaac Sim, understand the UI, and run your first Python script.
 
@@ -6,50 +6,37 @@
 
 ## 1. Installation Verification
 
-Before launching, confirm everything is in place:
+Agent default: run Isaac Sim through the repo Compose stack. Confirm the distribution image, GPU, and Compose file first:
 
 ```bash
-# Check Isaac Sim installation
-ls /workspace/isaacsim/isaac-sim.sh
-# Expected: /workspace/isaacsim/isaac-sim.sh
-
-# Check NVIDIA driver
+cd /workspace/aerial_ws
+docker image inspect nvcr.io/nvidia/isaac-sim:6.0.0 >/dev/null
 nvidia-smi | head -5
-# Expected: Driver Version 550+ with your GPU listed
-
-# Check VNC server is running on :1
-ps aux | grep vnc | grep ':1'
-# If not running: vncserver :1 -geometry 1920x1080 -depth 24
-
-# Check ROS2 Humble
-source /opt/ros/humble/setup.bash
-ros2 --version
-# Expected: humble or similar
+docker compose config >/dev/null
 ```
 
-## 2. First Launch — Interactive Mode (VNC)
+For manual commands inside the Isaac Sim container, the launcher path is `/isaac-sim/isaac-sim.sh`.
 
-The simplest way to get started is launching Isaac Sim interactively, viewing via VNC.
-
-### Step-by-step:
+## 2. First Launch — Distribution Container
 
 ```bash
-# 1. Set required environment variables
-export DISPLAY=:1
-export OMNI_KIT_ALLOW_ROOT=1
+cd /workspace/aerial_ws
+cp .env.example .env
+export ROS_DOMAIN_ID=22
+export FOXGLOVE_PORT=8865
 
-# 2. Launch Isaac Sim with Pegasus extension
-/workspace/isaacsim/isaac-sim.sh --allow-root \
-  --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
-  --enable pegasus.simulator
+# Terminal 1: Foxglove bridge
+docker compose up foxglove
+
+# Terminal 2: Isaac Sim 6.0
+docker compose up isaac-sim-60
 ```
 
-Connect to VNC at `localhost:5900` (or `localhost:5901` if you used `:1`). You should see the Isaac Sim UI appear.
+Connect Foxglove to `ws://localhost:8865`. If `HEADLESS=0`, allow X11 first with `xhost +local:docker` and set `DISPLAY` in `.env`.
 
-### What you'll see:
-- A loading screen with NVIDIA and Omniverse logos
-- The main Isaac Sim window with menus, toolbars, and an empty viewport
-- The **Console** at the bottom (blue/gray text area)
+### What you'll see
+- Headless mode (`HEADLESS=1`): container logs showing Isaac Sim startup and extension loading.
+- Headed mode (`HEADLESS=0`): a loading screen, the main Isaac Sim window, and the Console panel.
 
 > **First-launch tip**: The first launch can take 1–3 minutes. Watch the console for messages. If it hangs at "Loading shaders", just wait — it's compiling.
 
@@ -106,7 +93,7 @@ Isaac Sim supports several launch modes. Know when to use each:
 ```bash
 # Full GUI — for visual debugging and scene setup
 export DISPLAY=:1
-/workspace/isaacsim/isaac-sim.sh --allow-root
+/isaac-sim/isaac-sim.sh --allow-root
 ```
 
 **Use for**: Scene setup, visual debugging, learning the tool.
@@ -116,7 +103,7 @@ export DISPLAY=:1
 ```bash
 # GUI is open, then run a script inside it
 # Launch the GUI first, then in another terminal:
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py
 ```
 
@@ -128,7 +115,7 @@ The `--exec` flag runs a Python script **inside the already-running** Isaac Sim 
 
 ```bash
 # No GUI — script creates its own SimulationApp
-/workspace/isaacsim/isaac-sim.sh --allow-root -p my_script.py
+/isaac-sim/isaac-sim.sh --allow-root -p my_script.py
 ```
 
 **Use for**: Batch processing, dataset generation, CI/CD pipelines.
@@ -138,7 +125,7 @@ The `--exec` flag runs a Python script **inside the already-running** Isaac Sim 
 ```bash
 # Use tmux to keep Isaac Sim running in background
 tmux new-session -d -s isaac-sim \
-  '/workspace/isaacsim/isaac-sim.sh --allow-root --ext-path ...'
+  '/isaac-sim/isaac-sim.sh --allow-root --ext-path ...'
 
 # Attach to view logs
 tmux attach -t isaac-sim
@@ -155,7 +142,7 @@ Here's the canonical pattern for scripts that run via `--exec`:
 ```python
 #!/usr/bin/env python3
 """
-Minimal --exec script pattern for Isaac Sim 5.1.
+Minimal --exec script pattern for Isaac Sim 6.0.
 Runs inside an already-running Isaac Sim. No SimulationApp() call.
 """
 
@@ -196,10 +183,10 @@ Save this as `first_script.py` and run:
 ```bash
 # First launch Isaac Sim GUI in one terminal:
 export DISPLAY=:1
-/workspace/isaacsim/isaac-sim.sh --allow-root
+/isaac-sim/isaac-sim.sh --allow-root
 
 # Then in another terminal, execute the script:
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/first_script.py
 ```
 
@@ -213,8 +200,8 @@ Check the Console in the Isaac Sim GUI — you should see `"Scene ready! Red cub
 | Black window / crash | GPU driver issue | `nvidia-smi` to verify driver; reinstall if needed |
 | `GLXBadFBConfig` error | VNC doesn't support GPU rendering | Use VirtualGL or switch to `Xvfb` for headless |
 | Stuck at "Loading shaders" | First run compiling shader cache | Wait 3–5 minutes; subsequent launches are fast |
-| `Permission denied` on `isaac-sim.sh` | File not executable | `chmod +x /workspace/isaacsim/isaac-sim.sh` |
-| `Cannot connect to Omniverse` | Licensing | Isaac Sim 5.1 works offline; no login needed |
+| `Permission denied` on `isaac-sim.sh` | File not executable | `chmod +x /isaac-sim/isaac-sim.sh` |
+| `Cannot connect to Omniverse` | Licensing | Isaac Sim 6.0 works offline; no login needed |
 | No Pegasus extension | Extension path wrong | Verify: `ls /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator/` |
 | Script doesn't run with `--exec` | Isaac Sim GUI not running first | You need the GUI open before `--exec` works |
 | ImportError: SimulationApp | Using standalone pattern in --exec | Remove `SimulationApp()` call; use async pattern |
@@ -245,5 +232,5 @@ pkill -f isaac-sim
 
 ## References
 
-- Isaac Sim 5.1 Quick Start: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/
+- Isaac Sim 6.0 Quick Start: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/
 - Omniverse Launcher Guide: https://docs.omniverse.nvidia.com/launcher/latest/

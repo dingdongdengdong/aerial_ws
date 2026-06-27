@@ -64,5 +64,5 @@ else:
     carb.log_warn("[WARN] No warehouse environment — using default grid")
 
 carb.log_info("=" * 60)
-carb.log_info("Test complete. Connect Foxglove to ws://localhost:8765")
+carb.log_info("Test complete. Connect Foxglove to ws://localhost:8865")
 carb.log_info("=" * 60)

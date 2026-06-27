@@ -8,14 +8,14 @@ Does NOT create a SimulationApp — uses the existing one.
 Run:
     export DISPLAY=:1 OMNI_KIT_ALLOW_ROOT=1
     export ROS_DISTRO=humble RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
-    export ROS_DOMAIN_ID=42
+    export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib
+    export ROS_DOMAIN_ID=22
 
-    /workspace/isaacsim/isaac-sim.sh --allow-root \
+    /isaac-sim/isaac-sim.sh --allow-root \
       --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
       --enable pegasus.simulator \
       --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge \
-      --exec /workspaces/pegasus_ws/scripts/spawn_pegasus_drone.py
+      --exec /workspace/aerial_ws/scripts/spawn_pegasus_drone.py
 
 Root-cause of the crash
 -----------------------
@@ -31,6 +31,7 @@ own event loop with asyncio.ensure_future() so the GUI keeps running.
 """
 
 import asyncio
+import os
 import numpy as np
 
 import carb
@@ -131,10 +132,11 @@ async def spawn_drone():
     ]
 
     # ── 7. Spawn Iris quadrotor ──────────────────────────────────────────────
-    USD_FILE = (
-        "/workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator"
-        "/pegasus/simulator/assets/Robots/Iris/iris.usd"
+    pegasus_ext_path = os.environ.get(
+        "PEGASUS_EXT_PATH",
+        "/workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator",
     )
+    USD_FILE = os.path.join(pegasus_ext_path, "pegasus/simulator/assets/Robots/Iris/iris.usd")
     init_pos = [5.0, -2.0, 8.0]
     init_quat = Rotation.from_euler("XYZ", [0, 0, 0], degrees=True).as_quat()
 
@@ -158,7 +160,9 @@ async def spawn_drone():
     carb.log_info("  Vehicle : Iris quadrotor  @ [5, -2, 8] m")
     carb.log_info("  Camera  : inspection_camera  640×640  20 Hz  pointing down")
     carb.log_info("")
-    carb.log_info("  ROS2 topics (domain 42):")
+    ros_domain_id = os.environ.get("ROS_DOMAIN_ID", "22")
+    foxglove_port = os.environ.get("FOXGLOVE_PORT", "8865")
+    carb.log_info(f"  ROS2 topics (domain {ros_domain_id}):")
     carb.log_info("    /pegasus/state/pose")
     carb.log_info("    /pegasus/state/twist")
     carb.log_info("    /pegasus/sensors/imu")
@@ -166,7 +170,7 @@ async def spawn_drone():
     carb.log_info("    /pegasus/inspection_camera/depth")
     carb.log_info("    /pegasus/inspection_camera/color/camera_info")
     carb.log_info("")
-    carb.log_info("  Foxglove : ws://localhost:8765")
+    carb.log_info(f"  Foxglove : ws://localhost:{foxglove_port}")
     carb.log_info("  VNC      : localhost:5900")
     carb.log_info("=" * 60)
 

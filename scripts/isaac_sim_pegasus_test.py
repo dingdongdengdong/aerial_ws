@@ -5,7 +5,7 @@ Pegasus AI — Isaac Sim ROS2 Bridge Test
 Minimal test using the official NVIDIA Isaac Sim ROS2 bridge API.
 Exactly follows the pattern from isaacsim/standalone_examples/api/isaacsim.ros2.bridge/camera_periodic.py
 
-Run:   export OMNI_KIT_ALLOW_ROOT=1; export ROS_DISTRO=humble; export RMW_IMPLEMENTATION=rmw_fastrtps_cpp; export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib; /workspace/isaacsim/isaac-sim.sh -p /workspaces/pegasus_ws/scripts/isaac_sim_pegasus_test.py
+Run:   export OMNI_KIT_ALLOW_ROOT=1; export ROS_DISTRO=humble; export RMW_IMPLEMENTATION=rmw_fastrtps_cpp; export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib; /isaac-sim/isaac-sim.sh -p /workspace/aerial_ws/scripts/isaac_sim_pegasus_test.py
 
 View on VNC: localhost:5900
 Check ROS2 topics (separate terminal after sourcing ROS2): ros2 topic list | grep pegasus
