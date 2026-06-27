@@ -10,6 +10,11 @@ This workspace follows upstream
 architecture for the `aircraft` and `ground` roles. The upstream AAS simulation
 container is intentionally replaced by this repo's Isaac Sim 6.0/Pegasus stack.
 
+Think of this repository as a thin wrapper around AAS. AAS is the main project;
+this repo adds inspection-specific simulation, SDG, missions, inference glue,
+and operational defaults. Future changes should stay small and
+upstream-compatible unless there is an explicit reason to change AAS itself.
+
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Simulation role: Isaac Sim 6.0 + Pegasus             │
@@ -149,7 +154,7 @@ colcon build --symlink-install --packages-up-to \
 | # | Milestone | Focus |
 |---|-----------|-------|
 | 0 | Foundation | CI, ROS2 ws, imports |
-| 1 | Synthetic Data | Isaac Sim Replicator, 5k+ images |
+| 1 | SDG with Replicator | Isaac Sim/Omniverse Replicator defect datasets |
 | 2 | Baseline Training | YOLO on synthetic, mAP@0.5 ≥ 0.70 |
 | 3 | ROS2 Integration | Autopilot actions, topics, latency <200ms |
 | 4 | Domain Hardening | Weather, noise, materials |
@@ -187,6 +192,14 @@ aerial_ws/
 ├── models/                       # Trained weights (ONNX, TensorRT)
 └── pyproject.toml
 ```
+
+## Next Milestone: SDG with Replicator
+
+Create new work on `feature/sdg-replicator-milestone`. The milestone goal is to
+generate inspection-defect synthetic data with Isaac Sim 6.0 Replicator while
+keeping AAS aircraft/ground code unchanged. The first deliverable should be a
+small, reproducible Replicator pipeline for container/crane inspection imagery,
+labels, and validation commands.
 
 ## Safety
 

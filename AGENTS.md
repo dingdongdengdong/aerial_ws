@@ -19,6 +19,9 @@ This repository is an isolated, distribution-oriented simulation workspace for A
 - Follow the upstream AAS `aircraft` and `ground` roles as-is. The only
   intentional architecture substitution is simulation: use this repo's Isaac Sim
   6.0/Pegasus stack instead of the upstream Gazebo simulation container.
+- Treat `aerial_ws` as a thin wrapper/integration workspace around AAS. Prefer
+  tiny, upstream-compatible changes. Do not fork/rewrite AAS behavior in this
+  repo unless the user explicitly asks.
 
 ## Agent Workflow
 
@@ -34,6 +37,8 @@ This repository is an isolated, distribution-oriented simulation workspace for A
 - Primary stack file: `docker-compose.yml`.
 - Simulation container must remain `nvcr.io/nvidia/isaac-sim:6.0.0`; do not
   replace it with the upstream AAS simulation image.
+- Next active milestone after AAS unification is SDG: Isaac Sim/Omniverse
+  Replicator synthetic-data generation for inspection defects.
 - Default startup:
   - `cp .env.example .env`
   - `docker compose up foxglove`

@@ -4,6 +4,26 @@
 
 ---
 
+## Milestone Direction
+
+This is the next project milestone after AAS unification. Keep AAS aircraft and
+ground packages unchanged; SDG work belongs in this wrapper repo because it is
+the Isaac Sim 6.0 replacement for the upstream AAS simulation role.
+
+Use a new branch:
+
+```bash
+git switch -c feature/sdg-replicator-milestone
+```
+
+Initial success target:
+- Generate a small synthetic inspection dataset from Isaac Sim/Omniverse Replicator.
+- Include RGB images and labels for defects such as crack, corrosion, and paint damage.
+- Keep outputs under ignored `dataset/synthetic/`.
+- Provide a command that runs inside `nvcr.io/nvidia/isaac-sim:6.0.0`.
+
+---
+
 ## 1. Isaac Sim Replicator Overview
 
 Replicator is Isaac Sim's built-in framework for generating synthetic datasets. It provides:
