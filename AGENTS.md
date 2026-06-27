@@ -48,6 +48,11 @@ This repository is an isolated, distribution-oriented simulation workspace for A
 - Reference defect dataset provided by the user on 2026-06-28:
   `https://d4i3qtqj3r0z5.cloudfront.net/DefectDet_DemoPack_NVDA%401.0.1.zip`.
   Keep downloaded copies under ignored dataset/model paths.
+- Inspect extracted reference packs with
+  `python3 scripts/inspect_defect_reference_pack.py dataset/reference/DefectDet_DemoPack_NVDA_1.0.1`.
+  The demo pack is a visual/USD reference pack, not a YOLO-labeled dataset:
+  it contains 100 scratch decal PNGs, 39 validation JPEGs, material textures,
+  USD/USDC assets, and a SolidWorks part.
 - Official Omniverse USD downloadable packs reference:
   `https://docs.omniverse.nvidia.com/usd/latest/usd_content_samples/downloadable_packs.html`.
 - NVIDIA API credentials are local secrets only. Use `NVIDIA_API_KEY` in ignored

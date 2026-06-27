@@ -51,6 +51,19 @@ Reference data and credentials:
 - Store NVIDIA API credentials in ignored `.env` files as `NVIDIA_API_KEY`.
   Do not put raw NVIDIA API key values in tracked docs, code, tests, or commits.
 
+Reference-pack inspection:
+
+```bash
+python3 scripts/inspect_defect_reference_pack.py \
+  dataset/reference/DefectDet_DemoPack_NVDA_1.0.1
+```
+
+Observed on 2026-06-28: the demo pack is not a YOLO-labeled dataset. It is a
+reference asset and visual-target pack with 158 files: 100 scratch decal PNGs,
+39 validation JPEGs, 10 material JPGs, USD/USDC scene assets, and one SolidWorks
+part. Use it to tune Replicator visuals and defect decal style; keep generating
+YOLO-seg labels from this repo's Replicator semantic masks.
+
 Milestone config:
 
 ```bash

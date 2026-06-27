@@ -153,6 +153,15 @@ def _mask_pixels_for_color(mask_path: Path, rgba: Tuple[int, int, int, int]) -> 
     return pixels
 
 
+def _validate_rgb_frame_has_signal(rgb_path: Path) -> None:
+    from PIL import Image, ImageStat
+
+    with Image.open(rgb_path) as source:
+        extrema = ImageStat.Stat(source.convert("RGB")).extrema
+    if all(maximum == 0 for _, maximum in extrema):
+        raise ValueError(f"Replicator wrote a black RGB frame: {rgb_path}")
+
+
 def _frame_id(path: Path, prefix: str) -> int:
     return int(path.stem.removeprefix(prefix))
 
@@ -172,6 +181,7 @@ def postprocess_replicator_outputs(
         frame_name = f"frame_{frame:06d}"
         semantic_path = output_dir / f"semantic_segmentation_{frame:04d}.png"
         semantic_labels_path = output_dir / f"semantic_segmentation_labels_{frame:04d}.json"
+        _validate_rgb_frame_has_signal(rgb_path)
 
         image_rel = Path(config["outputs"]["images"]) / f"{frame_name}.png"
         mask_rel = Path(config["outputs"]["masks"]) / f"{frame_name}.png"
@@ -270,27 +280,42 @@ def _defect_material(rep: Any, class_name: str) -> Any:
     )
 
 
+def _panel_layout() -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+    """Return a close-up panel pose similar to the reference validation photos."""
+    return (0.0, 0.0, 1.35), (5.4, 0.10, 3.2)
+
+
 def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple[Any, Any]:
     """Build a no-crane-required inspection scene with semantic defect proxies."""
     width, height = config["generation"]["resolution"]
-    materials = config["domain_randomization"]["surface_materials"]
     scale_min, scale_max = config["domain_randomization"]["defect_scale_m"]
+    panel_position, panel_scale = _panel_layout()
 
     with rep.new_layer():
-        rep.create.light(rotation=(315, 0, 0), intensity=3000, light_type="distant")
+        rep.create.light(light_type="Dome", intensity=500, color=(0.8, 0.86, 0.95))
+        rep.create.light(
+            light_type="Sphere",
+            position=(0.0, -2.0, 2.4),
+            intensity=55000,
+            scale=3.0,
+            color=(1.0, 0.96, 0.9),
+        )
+        rep.create.light(
+            light_type="Sphere",
+            position=(-2.2, -2.4, 1.1),
+            intensity=18000,
+            scale=1.5,
+            color=(0.65, 0.72, 1.0),
+        )
 
-        surface_nodes = []
-        for idx, material_name in enumerate(materials):
-            x = (idx - 1) * 2.8
-            panel = rep.create.cube(position=(x, 0.0, 1.2), scale=(2.4, 0.08, 1.4))
-            with panel:
-                rep.modify.semantics([("class", "inspection_surface")])
-                rep.modify.material(_surface_material(rep, material_name))
-            surface_nodes.append(panel)
+        panel = rep.create.cube(position=panel_position, scale=panel_scale)
+        with panel:
+            rep.modify.semantics([("class", "inspection_surface")])
+            rep.modify.material(_surface_material(rep, "painted_steel"))
 
         for idx, class_name in enumerate(config["classes"]):
             defect = rep.create.cube(
-                position=rep.distribution.uniform((-2.6, -0.12, 0.4), (2.6, -0.08, 1.9)),
+                position=rep.distribution.uniform((-2.2, -0.18, 0.35), (2.2, -0.11, 2.35)),
                 rotation=rep.distribution.uniform((0, 0, 0), (0, 0, 360)),
                 scale=rep.distribution.uniform((scale_min, 0.012, 0.015), (scale_max, 0.02, 0.08)),
             )
@@ -299,9 +324,9 @@ def _build_scene(rep: Any, config: Mapping[str, Any], output_dir: Path) -> Tuple
                 rep.modify.material(_defect_material(rep, class_name))
 
         camera = rep.create.camera(
-            position=(0.0, -6.0, 2.2),
+            position=(0.0, -4.2, 1.45),
             look_at=(0.0, 0.0, 1.2),
-            focal_length=24,
+            focal_length=32,
         )
         render_product = rep.create.render_product(camera, (width, height))
 

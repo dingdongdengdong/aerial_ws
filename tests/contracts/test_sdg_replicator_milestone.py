@@ -97,8 +97,13 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
         source = SCRIPT.read_text()
 
         self.assertIn("rep.create.light", source)
+        self.assertIn('light_type="Dome"', source)
+        self.assertIn('light_type="Sphere"', source)
         self.assertIn("look_at=", source)
         self.assertIn("(0.0, 0.0, 1.2)", source)
+        self.assertIn("def _panel_layout", source)
+        self.assertIn("(5.4, 0.10, 3.2)", source)
+        self.assertIn("position=(0.0, -4.2, 1.45)", source)
 
     def test_replicator_postprocess_runs_before_simulation_app_close(self):
         source = SCRIPT.read_text()
@@ -188,6 +193,24 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
                 records,
             )
 
+    def test_replicator_postprocess_rejects_black_rgb_frames(self):
+        spec = importlib.util.spec_from_file_location("replicator_defects", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        config = module.load_config(CONFIG)
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "dataset" / "synthetic"
+            output_dir.mkdir(parents=True)
+
+            Image.new("RGB", (4, 4), (0, 0, 0)).save(output_dir / "rgb_0000.png")
+
+            with self.assertRaisesRegex(ValueError, "black RGB frame"):
+                module.postprocess_replicator_outputs(config, output_dir, root)
+
     def test_docs_explain_no_crane_asset_replicator_run_and_nvidia_skill_choice(self):
         doc = DOC.read_text()
 
@@ -200,6 +223,9 @@ class SDGReplicatorMilestoneContract(unittest.TestCase):
         self.assertIn("DefectDet_DemoPack_NVDA%401.0.1.zip", doc)
         self.assertIn("downloadable_packs.html", doc)
         self.assertIn("NVIDIA_API_KEY", doc)
+        self.assertIn("inspect_defect_reference_pack.py", doc)
+        self.assertIn("100 scratch decal PNGs", doc)
+        self.assertIn("not a YOLO-labeled dataset", doc)
 
     def test_tracked_reference_docs_do_not_contain_raw_nvidia_api_keys(self):
         tracked_reference_files = [
