@@ -13,7 +13,7 @@ Usage:
 
   # Terminal 2: Launch full stack
   source /opt/ros/humble/setup.bash
-  source /workspaces/pegasus_ws/ros2_ws/install/setup.bash
+  source /workspace/aerial_ws/ros2_ws/install/setup.bash
   ros2 launch pegasus_bringup drone_stack.launch.py
 
   # Terminal 3 (optional): Start inference
@@ -92,7 +92,7 @@ def generate_launch_description():
         name="mission_executor",
         parameters=[
             {
-                "mission_file": "/workspaces/pegasus_ws/missions/crane_inspection_demo.yaml",
+                "mission_file": "/workspace/aerial_ws/missions/crane_inspection_demo.yaml",
                 "default_takeoff_height": 8.0,
                 "waypoint_tolerance": 0.5,
                 "auto_start": False,

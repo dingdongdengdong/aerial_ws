@@ -1,4 +1,4 @@
-# Isaac Sim 5.1 — Learning Guide for Pegasus AI
+# Isaac Sim 6.0 — Learning Guide for Pegasus AI
 
 > **Comprehensive onboarding for new Isaac Sim users on the Pegasus AI drone inspection project.**
 >
@@ -10,40 +10,49 @@
 
 | Component | Version / Spec | Notes |
 |---|---|---|
-| **OS** | Ubuntu 22.04 LTS | Required for Isaac Sim 5.1 |
+| **OS** | Ubuntu 22.04 LTS | Required for Isaac Sim 6.0 |
 | **GPU** | NVIDIA RTX 4060 Ti 16GB | Minimum VRAM for medium scenes |
 | **NVIDIA Driver** | 550+ | `nvidia-smi` to check |
 | **ROS 2** | Humble Hawksbill | `/opt/ros/humble/` |
-| **Isaac Sim** | 5.1.0 | `/workspace/isaacsim/` |
+| **Isaac Sim** | 6.0.0 container | `/isaac-sim/` |
 | **Pegasus Simulator** | Latest | `/workspace/pegasus/PegasusSimulator/` |
 | **PX4-Autopilot** | v1.14.3 | `/workspace/PX4-Autopilot/` |
 | **MAVROS** | ROS2 Humble | `apt install ros-humble-mavros` |
 
-## Quick-Start Commands
+## Quick-Start Commands for Agents
+
+Use the repo-level Compose stack first. It fixes the distribution defaults: Isaac Sim 6.0, ROS domain `22`, and Foxglove port `8865`.
 
 ```bash
-# 1. Source ROS2
-source /opt/ros/humble/setup.bash
+cd /workspace/aerial_ws
+cp .env.example .env
+export ROS_DOMAIN_ID=22
+export FOXGLOVE_PORT=8865
 
-# 2. Set environment (CRITICAL — do this in every terminal)
-export ROS_DOMAIN_ID=44
+# Terminal 1 — Foxglove bridge, connect with ws://localhost:8865
+docker compose up foxglove
+
+# Terminal 2 — Isaac Sim 6.0 container
+docker compose up isaac-sim-60
+```
+
+If an agent runs commands inside the Isaac Sim container manually, use these paths and env vars:
+
+```bash
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:$LD_LIBRARY_PATH
-export DISPLAY=:1
-
-# 3. Launch Isaac Sim interactively (VNC)
-/workspace/isaacsim/isaac-sim.sh --allow-root \
-  --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
-  --enable pegasus.simulator
+export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib:$LD_LIBRARY_PATH
+export PYTHONPATH=/isaac-sim/exts/isaacsim.ros2.core/humble/rclpy:$PYTHONPATH
+/isaac-sim/isaac-sim.sh --allow-root --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge
 ```
 
 ## Environment Variable Reference
 
 | Variable | Value | Why |
 |---|---|---|
-| `ROS_DOMAIN_ID` | `44` | Isolates this project's DDS traffic from other ROS2 instances |
+| `ROS_DOMAIN_ID` | `22` | Isolates this project's DDS traffic from other ROS2 instances |
 | `RMW_IMPLEMENTATION` | `rmw_fastrtps_cpp` | FastRTPS is the default; CycloneDDS also works but test first |
-| `LD_LIBRARY_PATH` | `.../isaacsim.ros2.bridge/humble/lib` | Isaac Sim ships its own ROS2 Humble libraries — they MUST come first |
+| `LD_LIBRARY_PATH` | `.../isaacsim.ros2.core/humble/lib` | Isaac Sim ships its own ROS2 Humble libraries — they MUST come first |
 | `DISPLAY` | `:1` | Routes GUI to VNC display |
 | `OMNI_KIT_ALLOW_ROOT` | `1` | Allows running as root (required in container/VM) |
 | `FASTRTPS_DEFAULT_PROFILES_FILE` | (optional) | Custom QoS profiles if needed |
@@ -52,9 +61,9 @@ export DISPLAY=:1
 
 | Path | Contents |
 |---|---|
-| `/workspace/isaacsim/isaac-sim.sh` | Isaac Sim launcher |
-| `/workspace/isaacsim/exts/isaacsim.ros2.bridge/` | ROS2 Bridge extension |
-| `/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib/` | Internal ROS2 Humble libraries |
+| `/isaac-sim/isaac-sim.sh` | Isaac Sim launcher |
+| `/isaac-sim/exts/isaacsim.ros2.bridge/` | ROS2 Bridge extension |
+| `/isaac-sim/exts/isaacsim.ros2.core/humble/lib/` | Internal ROS2 Humble libraries |
 | `/workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator/` | Pegasus simulator extension |
 | `/workspace/PX4-Autopilot/` | PX4 SITL flight controller |
 | `/opt/ros/humble/` | System ROS2 Humble installation |
@@ -77,9 +86,9 @@ Read in order for the best learning experience:
 
 ## Key Official Documentation
 
-- **Isaac Sim 5.1**: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/
-- **ROS2 Bridge**: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/ros2_bridge.html
-- **Replicator**: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/replicator_tutorials/index.html
+- **Isaac Sim 6.0**: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/
+- **ROS2 Bridge**: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/ros2_bridge.html
+- **Replicator**: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/replicator_tutorials/index.html
 - **Pegasus Simulator**: https://pegasus-simulator.github.io/
 - **Isaac Lab**: https://isaac-sim.github.io/IsaacLab/
 - **Cosmos Transfer 2.5**: https://github.com/nvidia-cosmos/cosmos-transfer2.5
@@ -94,7 +103,7 @@ Isaac Sim (rendering + physics)
   │     ├── ROS2Backend → ROS2 topics (camera, IMU, pose)
   │     └── MonocularCamera (640×640, 20Hz, down-facing)
   │
-  ├── ROS2 Bridge → DDS (domain 44)
+  ├── ROS2 Bridge → DDS (domain 22)
   │     ├── /mavros/state, /mavros/local_position/pose
   │     ├── /drone/inspection_camera/color/image_raw
   │     └── /pegasus/state/pose, /pegasus/tf

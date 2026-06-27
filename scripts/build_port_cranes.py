@@ -11,7 +11,7 @@ Coordinate convention: Y-up, Z toward ship (seaward), X lateral.
 import os
 from pxr import Usd, UsdGeom, Gf
 
-OUTPUT_DIR = "/workspaces/pegasus_ws/assets/cranes"
+OUTPUT_DIR = os.environ.get("CRANE_ASSETS_DIR", "/workspace/aerial_ws/assets/cranes")
 
 
 def box(stage, prim_path, tx, ty, tz, sx, sy, sz, color):

@@ -813,7 +813,7 @@ jobs:
 ## 14. File Structure Summary
 
 ```
-/workspaces/pegasus_ws/
+/workspace/aerial_ws/
 ├── configs/
 │   ├── domain_randomization.yaml
 │   ├── domain_randomization_v2.yaml

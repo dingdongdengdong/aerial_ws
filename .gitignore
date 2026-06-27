@@ -21,3 +21,12 @@ models/
 dataset/synthetic/
 dataset/real/
 dataset/mixed_train/
+
+# Local agent/runtime state
+.omx/
+.env
+.env.*
+!.env.example
+
+# Docker/Isaac Sim local caches
+.cache/

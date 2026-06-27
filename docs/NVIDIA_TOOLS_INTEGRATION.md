@@ -42,7 +42,7 @@ augmented_dataset = synthetic_dataset + realistic_synthetic
 
 ## 2. Isaac Sim Replicator (Synthetic Data Generation)
 
-### Current Best Practice (Isaac Sim 4.x / 2024.x)
+### Current Best Practice (Isaac Sim 6.0)
 
 ```python
 # scripts/generate_synthetic_replicator.py

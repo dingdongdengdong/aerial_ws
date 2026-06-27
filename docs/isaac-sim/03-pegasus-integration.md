@@ -86,7 +86,7 @@ sudo apt install ros-humble-mavros ros-humble-mavros-extras
 
 ```bash
 source /opt/ros/humble/setup.bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 
 ros2 run mavros mavros_node --ros-args \
   -p fcu_url:=udp://:14540@localhost:18570 \
@@ -284,7 +284,7 @@ asyncio.ensure_future(spawn_drone())
 
 ```bash
 # After Isaac Sim GUI is open:
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py
 ```
 
@@ -318,7 +318,7 @@ simulation_app.close()
 
 Run with:
 ```bash
-/workspace/isaacsim/isaac-sim.sh --allow-root -p my_standalone_script.py
+/isaac-sim/isaac-sim.sh --allow-root -p my_standalone_script.py
 ```
 
 ## 7. CRITICAL: ROS2Backend rclpy Conflict in `--exec` Mode
@@ -385,21 +385,21 @@ ros2 service call /mavros/cmd/arming mavros_msgs/srv/CommandBool "{value: true}"
 ```bash
 # Terminal 1: Isaac Sim with drone
 export DISPLAY=:1
-export ROS_DOMAIN_ID=44
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+export ROS_DOMAIN_ID=22
+/isaac-sim/isaac-sim.sh --allow-root \
   --ext-path .../pegasus.simulator --enable pegasus.simulator
 # Wait for GUI, then:
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec .../spawn_drone_px4_exec.py
 
 # Terminal 2: MAVROS
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 ros2 run mavros mavros_node --ros-args \
   -p fcu_url:=udp://:14540@localhost:18570
 
 # Terminal 3: Verify
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 ros2 topic echo /mavros/state --once
 # Expected: connected: True

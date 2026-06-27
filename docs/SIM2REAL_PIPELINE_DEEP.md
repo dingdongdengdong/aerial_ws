@@ -283,7 +283,7 @@ dataset/
 
 | Component | Technology | Status |
 |-----------|-----------|--------|
-| Simulation | Isaac Sim 5.1 | ✅ Running |
+| Simulation | Isaac Sim 6.0 | ✅ Running |
 | Drone Sim | Pegasus Simulator (Iris + PX4) | ✅ Loaded |
 | ROS2 Bridge | isaacsim.ros2.bridge (internal humble) | ✅ Loaded |
 | SDG Pipeline | Omniverse Replicator | ⬜ Not started |
@@ -292,7 +292,7 @@ dataset/
 | Model Export | ONNX → TensorRT | ✅ Script ready |
 | Inference Node | ROS2 (pegasus_ai) | ✅ Built |
 | Data Orchestration | N/A (local for now, OSMO later) | ⬜ |
-| Visualization | Foxglove Studio (ws://localhost:8765) | ✅ Running |
+| Visualization | Foxglove Studio (ws://localhost:8865) | ✅ Running |
 
 ---
 

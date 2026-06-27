@@ -4,6 +4,24 @@
 
 ---
 
+## Agent Distribution Shortcut
+
+For distribution testing, start the repo-owned containers first. These commands enforce Isaac Sim 6.0, `ROS_DOMAIN_ID=22`, and Foxglove port `8865`:
+
+```bash
+cd /workspace/aerial_ws
+cp .env.example .env
+export ROS_DOMAIN_ID=22
+export FOXGLOVE_PORT=8865
+docker compose up foxglove
+# In another terminal:
+docker compose up isaac-sim-60
+```
+
+Use the manual launch sequence below only when debugging PX4/MAVROS/Pegasus process boundaries.
+
+---
+
 ## Launch Order (Strict)
 
 The stack has dependencies. Launch in this exact sequence:
@@ -27,7 +45,7 @@ The stack has dependencies. Launch in this exact sequence:
 Open **5 terminal windows** (or use tmux panes). Every terminal needs:
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 source /opt/ros/humble/setup.bash
 source /workspace/aerial_ws/ros2_ws/install/setup.bash
@@ -41,7 +59,7 @@ The Isaac Sim GUI must be running before any `--exec` scripts are launched.
 export DISPLAY=:1
 export OMNI_KIT_ALLOW_ROOT=1
 
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
   --enable pegasus.simulator \
   --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge
@@ -57,7 +75,7 @@ export OMNI_KIT_ALLOW_ROOT=1
 Once the GUI is ready, spawn the drone. This auto-launches PX4 SITL.
 
 ```bash
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py
 ```
 
@@ -78,7 +96,7 @@ Once the GUI is ready, spawn the drone. This auto-launches PX4 SITL.
 ### Terminal 3: MAVROS
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 
 ros2 run mavros mavros_node --ros-args \
@@ -96,7 +114,7 @@ ros2 run mavros mavros_node --ros-args \
 ### Terminal 4: Autopilot Interface (Action Server)
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 source /workspace/aerial_ws/ros2_ws/install/setup.bash
 
@@ -114,13 +132,13 @@ This starts the action server that handles Takeoff, Land, Orbit, and Offboard ac
 ### Terminal 5: Foxglove Bridge (Optional)
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 
-ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8865
 ```
 
-Open browser at `http://localhost:8765` to view live telemetry.
+Open browser at `http://localhost:8865` to view live telemetry.
 
 > **Verification**: Foxglove UI shows topics like `/mavros/local_position/pose`, `/drone/inspection_camera/color/image_raw`, etc.
 
@@ -136,9 +154,9 @@ For convenience, here's a script that launches everything in tmux windows:
 # Usage: bash launch_full_stack.sh
 
 SESSION="pegasus-stack"
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH="/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="/isaac-sim/exts/isaacsim.ros2.core/humble/lib:$LD_LIBRARY_PATH"
 
 # Create tmux session with 5 windows
 tmux new-session -d -s "$SESSION" -n "isaac-gui"
@@ -151,14 +169,14 @@ tmux new-window -t "$SESSION" -n "foxglove"
 tmux send-keys -t "$SESSION:0" \
   'export DISPLAY=:1 OMNI_KIT_ALLOW_ROOT=1' Enter
 tmux send-keys -t "$SESSION:0" \
-  '/workspace/isaacsim/isaac-sim.sh --allow-root --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator --enable pegasus.simulator --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge' Enter
+  '/isaac-sim/isaac-sim.sh --allow-root --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator --enable pegasus.simulator --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge' Enter
 
 echo "Waiting for Isaac Sim GUI to start..."
 sleep 30
 
 # Window 1: Spawn drone
 tmux send-keys -t "$SESSION:1" \
-  '/workspace/isaacsim/isaac-sim.sh --allow-root --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py' Enter
+  '/isaac-sim/isaac-sim.sh --allow-root --exec /workspace/aerial_ws/scripts/spawn_drone_px4_exec.py' Enter
 
 sleep 10
 
@@ -182,7 +200,7 @@ sleep 3
 tmux send-keys -t "$SESSION:4" \
   'source /opt/ros/humble/setup.bash' Enter
 tmux send-keys -t "$SESSION:4" \
-  'ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765' Enter
+  'ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8865' Enter
 
 echo ""
 echo "Full stack launched in tmux session '$SESSION'"
@@ -204,7 +222,7 @@ echo "Kill:   tmux kill-session -t $SESSION"
 After launching, run these checks in a new terminal:
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 
 # 1. Check MAVROS connection
@@ -235,7 +253,7 @@ ros2 topic echo /mavros/local_position/pose --once
 Once everything is running, test with an OFFBOARD takeoff:
 
 ```bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 source /opt/ros/humble/setup.bash
 
 # 1. Stream setpoints at 2m altitude
@@ -270,9 +288,9 @@ kill $PUB_PID
 | Starting Foxglove before MAVROS | Foxglove shows empty topic list | Launch in correct order; Foxglove discovers topics dynamically |
 | MAVROS launched before PX4 SITL | HEARTBEAT timeout, no connection | Ensure PX4 is running (Pegasus backend auto-launches it) |
 | `source /workspace/aerial_ws/ros2_ws/install/setup.bash` fails | `autopilot_interface` package not found | Run `colcon build` first in the ros2_ws |
-| Forgetting ROS_DOMAIN_ID in one terminal | Topics invisible from that terminal | Set `export ROS_DOMAIN_ID=44` in ALL terminals |
+| Forgetting ROS_DOMAIN_ID in one terminal | Topics invisible from that terminal | Set `export ROS_DOMAIN_ID=22` in ALL terminals |
 | Isaac Sim not spawning drone | Extension path issues | Double-check `--ext-path` points to correct Pegasus location |
-| Foxglove can't connect | Port already in use | Check `lsof -i :8765`, kill existing process |
+| Foxglove can't connect | Port already in use | Check `lsof -i :8865`, kill existing process |
 | Drone appears but doesn't respond to commands | MAVROS not connected | Verify with `ros2 topic echo /mavros/state --once` |
 | `ros2 topic pub` outputs nothing | Topic doesn't exist yet | Wait for MAVROS to connect and topics to appear (~5 seconds) |
 

@@ -29,7 +29,7 @@ User Task → VLM Agent (Qwen3-VL-30B) → MCP Tool Selection
 
 **What works locally**:
 - ✅ **TRELLIS.2** (`pip install trellis`) can generate individual 3D crane part assets
-- ✅ **SAGE-10k dataset** (10,000 pre-built scenes on HuggingFace) can be downloaded and loaded into Isaac Sim 5.1
+- ✅ **SAGE-10k dataset** (10,000 pre-built scenes on HuggingFace) can be downloaded and loaded into Isaac Sim 6.0
 - ✅ **Claude can replace the VLM agent** — the modular MCP architecture makes this straightforward
 
 ### Practical path forward
@@ -45,7 +45,7 @@ User Task → VLM Agent (Qwen3-VL-30B) → MCP Tool Selection
 ### Alternatives to SAGE (already available)
 
 We already have everything needed for the crane inspection demo:
-- **Simple_Warehouse** environment (included in Isaac Sim 5.1)
+- **Simple_Warehouse** environment (included in Isaac Sim 6.0)
 - **Pegasus drone** (Iris quadrotor with downward camera)
 - **Replicator** for synthetic defect data
 - **Cosmos Transfer** for photorealistic augmentation

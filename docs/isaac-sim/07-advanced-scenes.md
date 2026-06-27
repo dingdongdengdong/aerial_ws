@@ -384,7 +384,7 @@ asyncio.ensure_future(setup_scene())
 
 Run it:
 ```bash
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+/isaac-sim/isaac-sim.sh --allow-root \
   --exec /workspace/aerial_ws/scripts/setup_container_harbor.py
 ```
 
@@ -435,6 +435,6 @@ usdcat file.usd | grep 'def '
 ## References
 
 - USD Documentation: https://openusd.org/release/index.html
-- Isaac Sim Core API: https://docs.isaacsim.omniverse.nvidia.com/5.1.0/
+- Isaac Sim Core API: https://docs.isaacsim.omniverse.nvidia.com/6.0.0/
 - SimReady Assets: https://developer.nvidia.com/omniverse/simready-assets
 - pxr (Pixar USD Python): https://openusd.org/release/api/python_api.html

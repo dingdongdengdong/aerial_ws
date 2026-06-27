@@ -16,8 +16,8 @@
 | 6 | PX4 OFFBOARD: fails to arm or falls back to HOLD | Wrong custom_mode value (14 instead of 6) | Use `custom_mode=6` for PX4 OFFBOARD. Mode 14 is ArduPilot GUIDED |
 | 7 | `rclpy.init() called multiple times` crash | ROS2Backend used in `--exec` mode when ROS2 Bridge is already running | Do NOT use ROS2Backend in `--exec` scripts. Use PX4MavlinkBackend + external MAVROS |
 | 8 | Isaac Sim freezes / hangs | Launched in background with `&` instead of tmux | Use `tmux new-session -d -s isaac-sim '...'` for background launches |
-| 9 | `Symbol not found` / segfault at launch | LD_LIBRARY_PATH not pointing to Isaac Sim's internal ROS2 libs | Export `LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib:$LD_LIBRARY_PATH` |
-| 10 | `ros2 topic list` shows different topics in different terminals | ROS_DOMAIN_ID mismatch between terminals | Set `export ROS_DOMAIN_ID=44` in EVERY terminal |
+| 9 | `Symbol not found` / segfault at launch | LD_LIBRARY_PATH not pointing to Isaac Sim's internal ROS2 libs | Export `LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib:$LD_LIBRARY_PATH` |
+| 10 | `ros2 topic list` shows different topics in different terminals | ROS_DOMAIN_ID mismatch between terminals | Set `export ROS_DOMAIN_ID=22` in EVERY terminal |
 | 11 | PX4 setpoints ignored; drone won't move | Sending setpoint AFTER switching to OFFBOARD | Stream setpoints for 2+ seconds BEFORE switching to OFFBOARD mode |
 | 12 | `FileNotFoundError: px4` | `px4_dir` path wrong or PX4 not compiled | Set `px4_dir: "/workspace/PX4-Autopilot"` and verify `make px4_sitl` completed |
 | 13 | Isaac Sim hangs at "Loading shaders" | First launch — shader compilation (normal) | Wait 3–5 minutes. Subsequent launches are fast |
@@ -30,9 +30,9 @@
 | 20 | No camera topics after drone spawn | ROS2Backend not configured with `pub_graphical_sensors: True` | Set `"pub_graphical_sensors": True` in ROS2Backend config |
 | 21 | Camera image is all black | Camera pointing wrong direction; scene too dark | Check camera orientation: `[0.0, 90.0, 0.0]` = pitch 90° down. Add lights to scene |
 | 22 | `OmniGraph` errors in console | Extension dependencies not loaded | Enable `isaacsim.ros2.bridge` BEFORE `pegasus.simulator` |
-| 23 | `PermissionError` running `.sh` file | File permissions | `chmod +x /workspace/isaacsim/isaac-sim.sh` |
+| 23 | `PermissionError` running `.sh` file | File permissions | `chmod +x /isaac-sim/isaac-sim.sh` |
 | 24 | DDS discovery blocked by firewall | `ros2 topic list` empty even with correct setup | Check firewall: `sudo ufw status`. Ensure UDP multicast is allowed on loopback |
-| 25 | Foxglove shows no data | Foxglove bridge launched WITHOUT ROS_DOMAIN_ID set | Launch Foxglove bridge with `export ROS_DOMAIN_ID=44` in the same terminal |
+| 25 | Foxglove shows no data | Foxglove bridge launched WITHOUT ROS_DOMAIN_ID set | Launch Foxglove bridge with `export ROS_DOMAIN_ID=22` in the same terminal |
 
 ---
 
@@ -210,7 +210,7 @@ ros2 service call /mavros/cmd/arming mavros_msgs/srv/CommandBool "{value: true}"
 ```bash
 # Start Isaac Sim in a detached tmux session
 tmux new-session -d -s isaac-sim \
-  '/workspace/isaacsim/isaac-sim.sh --allow-root --ext-path ...'
+  '/isaac-sim/isaac-sim.sh --allow-root --ext-path ...'
 
 # Check it's running
 tmux capture-pane -t isaac-sim -p | tail -20
@@ -233,7 +233,7 @@ tmux kill-session -t isaac-sim
 ps aux | grep isaac-sim | grep -v grep
 
 # What ROS2 topics exist?
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 ros2 topic list
 
 # Is MAVROS connected?

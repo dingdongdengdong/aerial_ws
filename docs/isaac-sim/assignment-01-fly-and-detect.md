@@ -43,15 +43,15 @@ source /opt/ros/humble/setup.bash
 echo $ROS_DISTRO  # must say "humble"
 
 # 2. ROS_DOMAIN_ID set (must match in every terminal)
-export ROS_DOMAIN_ID=44
-echo $ROS_DOMAIN_ID  # must say "44"
+export ROS_DOMAIN_ID=22
+echo $ROS_DOMAIN_ID  # must say "22"
 
 # 3. PX4 SITL builds
 cd /workspace/PX4-Autopilot && ls build/px4_sitl_default/bin/px4
 # File must exist
 
 # 4. Isaac Sim present
-ls /workspace/isaacsim/isaac-sim.sh
+ls /isaac-sim/isaac-sim.sh
 # File must exist
 
 # 5. Pegasus Simulator present
@@ -85,7 +85,7 @@ Open **5 terminals** (or tmux panes). In each, first run:
 ```bash
 source /opt/ros/humble/setup.bash
 source /workspace/aerial_ws/ros2_ws/install/setup.bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 ```
 
 **Terminal 1 — PX4 SITL:**
@@ -105,15 +105,15 @@ Verify: `ros2 topic list | grep mavros/state` — must show topic.
 
 **Terminal 3 — Foxglove Bridge:**
 ```bash
-ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 use_sim_time:=true
+ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8865 use_sim_time:=true
 ```
 
 **Terminal 4 — Isaac Sim with Pegasus:**
 ```bash
 export OMNI_KIT_ALLOW_ROOT=1 DISPLAY=:1
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export LD_LIBRARY_PATH=/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
-/workspace/isaacsim/isaac-sim.sh --allow-root \
+export LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.core/humble/lib
+/isaac-sim/isaac-sim.sh --allow-root \
   --ext-path /workspace/pegasus/PegasusSimulator/extensions/pegasus.simulator \
   --enable pegasus.simulator \
   --/isaac/startup/ros_bridge_extension=isaacsim.ros2.bridge \
@@ -131,7 +131,7 @@ Should show **160+ topics**.
 
 1. Go to https://studio.foxglove.dev/
 2. Click "Open Connection"
-3. Enter `ws://localhost:8765`
+3. Enter `ws://localhost:8865`
 4. In the Layout panel, add a **3D panel** and a **Raw Messages panel**
 
 ### 1.3 Arm and Take Off via MAVROS
@@ -236,7 +236,7 @@ In a new terminal (Terminal 6):
 ```bash
 source /opt/ros/humble/setup.bash
 source /workspace/aerial_ws/ros2_ws/install/setup.bash
-export ROS_DOMAIN_ID=44
+export ROS_DOMAIN_ID=22
 
 # Check what inference nodes are available
 ros2 pkg executables pegasus_ai
@@ -361,7 +361,7 @@ A short markdown file (or comment on the GitHub issue) answering the 5 questions
 
 | Problem | Check |
 |---------|-------|
-| 0 topics in `ros2 topic list` | `echo $ROS_DOMAIN_ID` — must be 44 everywhere |
+| 0 topics in `ros2 topic list` | `echo $ROS_DOMAIN_ID` — must be 22 everywhere |
 | Camera topic exists but no images | QoS mismatch — subscriber must use RELIABLE |
 | Drone won't arm | OFFBOARD mode needs setpoint stream before arming |
 | `rclpy init` crash | Isaac Sim internal rclpy vs system rclpy conflict (normal in --exec) |
